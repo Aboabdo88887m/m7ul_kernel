@@ -34,12 +34,15 @@
 #include <mach/mpp.h>
 #include <linux/android_alarm.h>
 #include <linux/suspend.h>
-#include <linux/earlysuspend.h>
+#include <linux/earlysuspend.case HTC_CHARGER_EVENT_SRC_USB:h>
 
 #include <mach/htc_gauge.h>
 #include <mach/htc_charger.h>
 #include <mach/htc_battery_cell.h>
 
+#ifdef CONFIG_FORCE_FAST_CHARGE
+#include <linux/fastchg.h>
+#endifcase HTC_CHARGER_EVENT_SRC_USB:
 
 #define HTC_BATT_CHG_DIS_BIT_EOC	(1)
 #define HTC_BATT_CHG_DIS_BIT_ID		(1<<1)
@@ -377,7 +380,13 @@ int htc_charger_event_notify(enum htc_charger_event event)
 		htc_batt_schedule_batt_info_update();
 		break;
 	case HTC_CHARGER_EVENT_SRC_USB: 
-		latest_chg_src = CHARGER_USB;
+		    if (force_fast_charge == 1) {
+      printk("[FASTCHARGE] Forcing CHARGER_AC");
+      latest_chg_src = CHARGER_AC;
+    } else {
+      printk("[FASTCHARGE] NOT set, using normal CHARGER_USB");
+      latest_chg_src = CHARGER_USB;
+    }
 		htc_batt_schedule_batt_info_update();
 		break;
 	case HTC_CHARGER_EVENT_SRC_AC: 
@@ -389,7 +398,13 @@ int htc_charger_event_notify(enum htc_charger_event event)
 		htc_batt_schedule_batt_info_update();
 		break;
 	case HTC_CHARGER_EVENT_SRC_DETECTING: 
-		latest_chg_src = CHARGER_DETECTING;
+		    if (force_fast_charge == 1) {
+      printk("[FASTCHARGE] Forcing CHARGER_AC");
+      latest_chg_src = CHARGER_AC;
+    } else {
+      printk("[FASTCHARGE] NOT set, using normal CHARGER_UNKNOWN_USB");
+      latest_chg_src = CHARGER_UNKNOWN_USB;
+    }
 		htc_batt_schedule_batt_info_update();
 		wake_lock(&htc_batt_timer.unknown_usb_detect_lock);
 		queue_delayed_work(htc_batt_timer.batt_wq,
